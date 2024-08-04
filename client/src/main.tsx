@@ -1,6 +1,6 @@
 import { jsxDEV } from "react/jsx-dev-runtime";
 import React from "react";
-import ReactDOM from "@types/react-dom/client";
+import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
