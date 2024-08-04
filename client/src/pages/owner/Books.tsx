@@ -5,12 +5,14 @@ interface OwnerBooksProps {
 }
 
 const OwnerBooks: React.FC<OwnerBooksProps> = ({ books }) => {
+  if (!books) return null;
+
   return (
     <div>
       <h1>Owner Books</h1>
       <ul>
         {books.map((book, index) => (
-          <li key={index}>{book.title}</li>
+          <li key={book.id}>{book.title}</li>
         ))}
       </ul>
     </div>
