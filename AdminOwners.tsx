@@ -18,7 +18,7 @@ const AdminOwners: React.FC<AdminOwnersProps> = ({ owners }) => {
 
   return (
     <div>
-      <h1>Admin Owners</h1>
+      <h2>Admin Owners</h2>
       <ul>
         {dummyOwners.map((owner) => (
           <li key={owner.id}>{owner.name}</li>
