@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, Typography } from '@mui/material';
+import { Card, CardContent, Typography, Button } from '@mui/material';
 
 interface Book {
   id: number;
@@ -22,7 +22,7 @@ const BookCard = ({ book, onRent }: BookCardProps) => {
         <Typography variant="body2" component="p">
           {book.author}
         </Typography>
-        <button onClick={() => onRent(book.id)}>Rent</button>
+        <Button variant="contained" onClick={() => onRent(book.id)}>Rent</Button>
       </CardContent>
     </Card>
   );
