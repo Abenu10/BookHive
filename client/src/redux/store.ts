@@ -1,14 +1,12 @@
-import {configureStore} from '@reduxjs/toolkit';
-import authReducer from './reducers/authReducer';
+import { createStore, combineReducers } from 'redux';
 import bookReducer from './reducers/bookReducer';
 import userReducer from './reducers/userReducer';
 
-const store = configureStore({
-  reducer: {
-    auth: authReducer,
-    books: bookReducer,
-    users: userReducer,
-  },
+const rootReducer = combineReducers({
+  books: bookReducer,
+  user: userReducer,
 });
+
+const store = createStore(rootReducer);
 
 export default store;
