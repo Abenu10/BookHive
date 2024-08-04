@@ -1,35 +1,28 @@
 import React from 'react';
-import {Card, CardContent, CardMedia, Typography, Button} from '@mui/material';
+import { Card, CardContent, Typography } from '@mui/material';
 
-const BookCard = ({book, onRent}) => {
+interface Book {
+  id: number;
+  title: string;
+  author: string;
+}
+
+interface BookCardProps {
+  book: Book;
+  onRent: (id: number) => void;
+}
+
+const BookCard = ({ book, onRent }: BookCardProps) => {
   return (
-    <Card sx={{maxWidth: 345, m: 2}}>
-      <CardMedia
-        component='img'
-        height='140'
-        image={book.coverImage}
-        alt={book.title}
-      />
+    <Card>
       <CardContent>
-        <Typography gutterBottom variant='h5' component='div'>
+        <Typography variant="h5" component="h2">
           {book.title}
         </Typography>
-        <Typography variant='body2' color='text.secondary'>
-          Author: {book.author}
+        <Typography variant="body2" component="p">
+          {book.author}
         </Typography>
-        <Typography variant='body2' color='text.secondary'>
-          Category: {book.category}
-        </Typography>
-        <Typography variant='body2' color='text.secondary'>
-          Price: ${book.price}
-        </Typography>
-        <Button
-          variant='contained'
-          color='primary'
-          onClick={() => onRent(book.id)}
-        >
-          Rent Now
-        </Button>
+        <button onClick={() => onRent(book.id)}>Rent</button>
       </CardContent>
     </Card>
   );
