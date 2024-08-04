@@ -19,7 +19,7 @@ const Home = () => {
           <Grid item xs={12} sm={6} md={4} key={book.id}>
             <BookCard
               book={book}
-              onRent={(id) => console.log(`Rent book ${id}`)}
+              onRent={(id: number) => console.log(`Rent book ${id}`)}
             />
           </Grid>
         ))}
