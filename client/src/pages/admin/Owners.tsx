@@ -5,11 +5,17 @@ interface AdminOwnersProps {
 }
 
 const AdminOwners: React.FC<AdminOwnersProps> = ({ owners }) => {
+  const dummyOwners = [
+    { name: 'John Doe' },
+    { name: 'Jane Doe' },
+    { name: 'Bob Smith' },
+  ];
+
   return (
     <div>
       <h1>Admin Owners</h1>
       <ul>
-        {owners.map((owner, index) => (
+        {dummyOwners.map((owner, index) => (
           <li key={index}>{owner.name}</li>
         ))}
       </ul>
