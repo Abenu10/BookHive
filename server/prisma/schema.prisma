@@ -1,82 +1,108 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = "postgresql://neondb1_owner:z5IlHDR2CZLv@ep-odd-dust-a5zoinkm-pooler.us-east-2.aws.neon.tech/book-hive?sslmode=require&connect_timeout=15&pool_timeout=15"
 }
 
 
 model User {
-  id        String       @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  books     Book[]
-  rentals   Rental[]
-  wallet    Wallet?
+  id           String   @id @default(uuid())
+  email        String   @unique
+  password     String
+  name         String
+  phoneNumber  String?
+  profileImage String?
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  rentals      Rental[]
+  wallet       Wallet?
+}
+
+model Owner {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  password     String
+  name         String
+  phoneNumber  String?
+  profileImage String?
+  status       OwnerStatus  @default(INACTIVE)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  location     String
+  books        Book[]
+  wallet       OwnerWallet?
 }
 
 model Book {
-  id          Int      @id @default(autoincrement())
-  title       String
-  author      String
-  category    Category @relation(fields: [categoryId], references: [id])
-  categoryId  Int
-  quantity    Int
-  available   Int
-  price       Float
-  status      Status   @default(PENDING)
-  owner       User     @relation(fields: [ownerId], references: [id])
-  ownerId     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  rentals     Rental[]
+  id                Int        @id @default(autoincrement())
+  title             String
+  author            String
+  coverImage        String
+  description       String?
+  category          Category   @relation(fields: [categoryId], references: [id])
+  categoryId        Int
+  quantity          Int
+  availableQuantity Int
+  price             Float
+  status            BookStatus @default(PENDING)
+  rating            Float?     @default(0.0)
+  reviewCount       Int?       @default(0)
+  owner             Owner      @relation(fields: [ownerId], references: [id])
+  ownerId           String
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  rentals           Rental[]
 }
 
 model Category {
-  id    Int    @id @default(autoincrement())
-  name  String @unique
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+  image String?
   books Book[]
 }
 
 model Rental {
-  id        Int      @id @default(autoincrement())
-  book      Book     @relation(fields: [bookId], references: [id])
+  id        Int          @id @default(autoincrement())
+  book      Book         @relation(fields: [bookId], references: [id])
   bookId    Int
-  user      User     @relation(fields: [userId], references: [id])
+  user      User         @relation(fields: [userId], references: [id])
   userId    String
   startDate DateTime
   endDate   DateTime
   status    RentalStatus @default(ACTIVE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 }
 
 model Wallet {
-  id      Int   @id @default(autoincrement())
-  balance Float @default(0)
-  user    User  @relation(fields: [userId], references: [id])
-  userId  String   @unique
+  id      Int    @id @default(autoincrement())
+  balance Float  @default(0)
+  user    User   @relation(fields: [userId], references: [id])
+  userId  String @unique
+}
+
+model OwnerWallet {
+  id      Int    @id @default(autoincrement())
+  balance Float  @default(0)
+  owner   Owner  @relation(fields: [ownerId], references: [id])
+  ownerId String @unique
 }
 
 enum Role {
   USER
-  OWNER
   ADMIN
 }
 
-enum Status {
+enum OwnerStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum BookStatus {
   PENDING
   APPROVED
   DISABLED

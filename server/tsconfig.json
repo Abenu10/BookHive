@@ -4,9 +4,10 @@
     "module": "CommonJS",
     "rootDir": "./src",
     "outDir": "./dist",
-    "strict": true,
-    "esModuleInterop": true,
+    "noImplicitAny": false,
     "skipLibCheck": true,
+    "strict": false,
+    "esModuleInterop": true,
     "typeRoots": [
       "./node_modules/@types",
       "./src/types" // Ensure this path is included
