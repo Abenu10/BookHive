@@ -11,6 +11,7 @@ import {
   getBooksFromCategory,
   getCategories,
   getBookDetailById,
+  searchBooks,
 } from '../controllers/UserController';
 import verifyToken from '../middlewares/authMiddleware';
 import {validateRegister} from '../middlewares/validator';
@@ -30,5 +31,6 @@ router.get('/books/available', verifyToken, getAvailableBooks);
 router.get('/books/:categoryId', verifyToken, getBooksFromCategory);
 router.get('/books/category/all', verifyToken, getCategories);
 router.get('/book/:bookId', verifyToken, getBookDetailById);
+router.get('/search/book', verifyToken, searchBooks);
 
 export default router;

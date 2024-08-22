@@ -11,7 +11,8 @@ import {
   ownerWithdraw,
   getOwnerBalance,
   ownerLogout,
-  getCategories
+  getCategories,
+  getFilteredOwnerBooks
 } from '../controllers/OwnerController';
 import verifyOwnerToken from '../middlewares/ownerMiddleware';
 import  upload  from '../middlewares/upload';
@@ -27,6 +28,7 @@ router.patch('/update-book/:bookId', verifyOwnerToken, upload.single('coverImage
 router.get('/book', verifyOwnerToken, getAllOwnerBooks);
 router.get('/book/:bookId', verifyOwnerToken, getAllOwnerBooksById);
 router.delete('/book/:bookId', verifyOwnerToken, deleteBook);
+router.get('/filtered-books', verifyOwnerToken, getFilteredOwnerBooks);
 
 router.post('/:ownerId/withdraw', verifyOwnerToken, ownerWithdraw);
 router.get('/:ownerId', verifyOwnerToken, getOwnerBalance);

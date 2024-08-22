@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getCategories = exports.ownerLogout = exports.ownerWithdraw = exports.getOwnerBalance = exports.deleteBook = exports.getAllOwnerBooksById = exports.getAllOwnerBooks = exports.updateBook = exports.createBook = exports.loginOwner = exports.registerOwner = void 0;
+exports.getCategories = exports.ownerLogout = exports.ownerWithdraw = exports.getOwnerBalance = exports.deleteBook = exports.getAllOwnerBooksById = exports.getFilteredOwnerBooks = exports.getAllOwnerBooks = exports.updateBook = exports.createBook = exports.loginOwner = exports.registerOwner = void 0;
 const client_1 = require("@prisma/client");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -274,6 +274,41 @@ const getAllOwnerBooks = (req, res) => __awaiter(void 0, void 0, void 0, functio
     }
 });
 exports.getAllOwnerBooks = getAllOwnerBooks;
+const getFilteredOwnerBooks = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { search, id, title, author, category, status } = req.query;
+    const ownerId = req.userId;
+    try {
+        let query = { ownerId };
+        if (search) {
+            query.OR = [
+                { title: { contains: search, mode: "insensitive" } },
+                { author: { contains: search, mode: "insensitive" } },
+                { category: { name: { contains: search, mode: "insensitive" } } },
+            ];
+        }
+        if (id)
+            query.id = { equals: parseInt(id) };
+        if (title)
+            query.title = { contains: title, mode: "insensitive" };
+        if (author)
+            query.author = { contains: author, mode: "insensitive" };
+        if (category)
+            query.category = { name: { contains: category, mode: "insensitive" } };
+        if (status)
+            query.status = status;
+        const books = yield prisma.book.findMany({
+            where: query,
+            include: { category: true },
+            orderBy: { title: "asc" },
+        });
+        res.json(books);
+    }
+    catch (error) {
+        console.error("Error fetching filtered owner books:", error);
+        res.status(500).json({ error: "Error fetching filtered owner books" });
+    }
+});
+exports.getFilteredOwnerBooks = getFilteredOwnerBooks;
 const getAllOwnerBooksById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { bookId } = req.params;
     const ownerId = req.ownerId;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState}   from 'react';
 import {
   AppBar,
   Toolbar,
@@ -18,9 +18,14 @@ import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNone
 import {useDispatch} from 'react-redux';
 import {logoutStart} from '../../redux/auth/authSlice';
 import Logo2 from '../../assets/Logo2.svg';
+import { searchBooksStart } from '../../redux/user/userSlice';
+import { useNavigate } from 'react-router-dom';
 
-const Header: React.FC = () => {
+const Header: React.FC<{ onSearch: (query: string) => void }> = ({ onSearch }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+
 
   const handleLogout = () => {
     dispatch(logoutStart());
@@ -34,6 +39,16 @@ const Header: React.FC = () => {
       transform: 'scale(1.2)',
       color: 'primary.main',
     },
+  };
+
+  
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      dispatch(searchBooksStart(searchQuery.trim()));
+      onSearch(searchQuery.trim());
+      navigate('/');
+    }
   };
 
   return (
@@ -92,11 +107,15 @@ const Header: React.FC = () => {
               border: '2px solid',
               borderColor: 'primary.main',
             }}
+            component='form'
+            onSubmit={handleSearch}
           >
             <InputBase
-              placeholder='Search for anything'
+              placeholder=' Search for anything'
               sx={{ml: 1, flex: 1, fontSize: '0.9rem'}} 
               inputProps={{'aria-label': 'search'}}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
             <Box
               sx={{

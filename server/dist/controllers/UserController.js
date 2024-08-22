@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getCategories = exports.getBooksFromCategory = exports.logout = exports.getBookDetailById = exports.getAvailableBooks = exports.deleteUser = exports.updateUser = exports.getUserById = exports.getAllUsers = exports.refreshToken = exports.login = exports.register = void 0;
+exports.searchBooks = exports.getCategories = exports.getBooksFromCategory = exports.logout = exports.getBookDetailById = exports.getAvailableBooks = exports.deleteUser = exports.updateUser = exports.getUserById = exports.getAllUsers = exports.refreshToken = exports.login = exports.register = void 0;
 const client_1 = require("@prisma/client");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -405,3 +405,44 @@ const getCategories = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.getCategories = getCategories;
+// search book
+const searchBooks = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { query } = req.query;
+    try {
+        const books = yield prisma.book.findMany({
+            where: {
+                OR: [
+                    { title: { contains: query, mode: 'insensitive' } },
+                    { author: { contains: query, mode: 'insensitive' } },
+                    { category: { name: { contains: query, mode: 'insensitive' } } },
+                ],
+                status: 'APPROVED',
+                // availableQuantity: { gt: 0 },
+            },
+            include: {
+                category: { select: { name: true } },
+                owner: { select: { name: true, location: true } },
+            },
+        });
+        const formattedBooks = books.map((book) => ({
+            id: book.id,
+            title: book.title,
+            author: book.author,
+            coverImage: book.coverImage,
+            description: book.description,
+            category: book.category.name,
+            availableQuantity: book.availableQuantity,
+            price: book.price,
+            rating: book.rating,
+            reviewCount: book.reviewCount,
+            ownerName: book.owner.name,
+            ownerLocation: book.owner.location,
+        }));
+        res.json(formattedBooks);
+    }
+    catch (error) {
+        console.error('Error searching books:', error);
+        res.status(500).json({ error: 'Error searching books' });
+    }
+});
+exports.searchBooks = searchBooks;

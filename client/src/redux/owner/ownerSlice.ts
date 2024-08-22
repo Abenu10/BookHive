@@ -101,6 +101,18 @@ const ownerSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
+    fetchFilteredBooksStart(state, action: PayloadAction<any>) {
+      state.loading = true;
+      state.error = null;
+    },
+    fetchFilteredBooksSuccess(state, action: PayloadAction<Book[]>) {
+      state.books = action.payload;
+      state.loading = false;
+    },
+    fetchFilteredBooksFailure(state, action: PayloadAction<string>) {
+      state.loading = false;
+      state.error = action.payload;
+    },
   },
 });
 
@@ -118,6 +130,9 @@ export const {
   deleteBookSuccess,
   deleteBookFailure,
   clearSuccessMessage,
+  fetchFilteredBooksStart,
+  fetchFilteredBooksSuccess,
+  fetchFilteredBooksFailure,
 } = ownerSlice.actions;
 
 export default ownerSlice.reducer;

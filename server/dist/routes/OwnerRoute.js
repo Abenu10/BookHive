@@ -16,6 +16,7 @@ router.patch('/update-book/:bookId', ownerMiddleware_1.default, upload_1.default
 router.get('/book', ownerMiddleware_1.default, OwnerController_1.getAllOwnerBooks);
 router.get('/book/:bookId', ownerMiddleware_1.default, OwnerController_1.getAllOwnerBooksById);
 router.delete('/book/:bookId', ownerMiddleware_1.default, OwnerController_1.deleteBook);
+router.get('/filtered-books', ownerMiddleware_1.default, OwnerController_1.getFilteredOwnerBooks);
 router.post('/:ownerId/withdraw', ownerMiddleware_1.default, OwnerController_1.ownerWithdraw);
 router.get('/:ownerId', ownerMiddleware_1.default, OwnerController_1.getOwnerBalance);
 router.post('/logout', OwnerController_1.ownerLogout);

@@ -12,6 +12,9 @@ import {
   deleteBookStart,
   deleteBookSuccess,
   deleteBookFailure,
+  fetchFilteredBooksSuccess,
+  fetchFilteredBooksFailure,
+  fetchFilteredBooksStart,
 } from './ownerSlice';
 import api from '../../api/apiCall';
 import axios, {AxiosResponse} from 'axios';
@@ -22,6 +25,16 @@ function* fetchBooks() {
     yield put(fetchBooksSuccess(response.data));
   } catch (error) {
     yield put(fetchBooksFailure(error));
+  }
+}
+function* fetchFilteredBooks(action: ReturnType<typeof fetchFilteredBooksStart>) {
+  try {
+    const response: AxiosResponse = yield call(api.get, '/owners/filtered-books', {
+      params: action.payload,
+    });
+    yield put(fetchFilteredBooksSuccess(response.data));
+  } catch (error) {
+    yield put(fetchFilteredBooksFailure(error.message));
   }
 }
 
@@ -106,4 +119,5 @@ export function* watchOwner() {
   yield takeLatest(createBookStart.type, createBook);
   yield takeLatest(updateBookStart.type, updateBook);
   yield takeLatest(deleteBookStart.type, deleteBook);
+  yield takeLatest(fetchFilteredBooksStart.type, fetchFilteredBooks);
 }

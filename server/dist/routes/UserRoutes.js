@@ -20,4 +20,5 @@ router.get('/books/available', authMiddleware_1.default, UserController_1.getAva
 router.get('/books/:categoryId', authMiddleware_1.default, UserController_1.getBooksFromCategory);
 router.get('/books/category/all', authMiddleware_1.default, UserController_1.getCategories);
 router.get('/book/:bookId', authMiddleware_1.default, UserController_1.getBookDetailById);
+router.get('/search/book', authMiddleware_1.default, UserController_1.searchBooks);
 exports.default = router;

@@ -134,6 +134,18 @@ toggleRentalStatusFailure: (state, action: PayloadAction<string>) => {
   state.loading = false;
   state.error = action.payload;
 },
+searchBooksStart(state, action: PayloadAction<string>) {
+  state.loading = true;
+  state.error = null;
+},
+searchBooksSuccess(state, action: PayloadAction<Book[]>) {
+  state.availableBooks = action.payload;
+  state.loading = false;
+},
+searchBooksFailure(state, action: PayloadAction<string>) {
+  state.loading = false;
+  state.error = action.payload;
+},
   },
 
 });
@@ -160,7 +172,10 @@ export const {
   setIsBookRented,
   toggleRentalStatusStart,
   toggleRentalStatusSuccess,
-  toggleRentalStatusFailure
+  toggleRentalStatusFailure,
+  searchBooksStart,
+  searchBooksSuccess,
+  searchBooksFailure
 } = userSlice.actions;
 
 export default userSlice.reducer;

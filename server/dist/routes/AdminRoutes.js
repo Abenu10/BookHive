@@ -8,6 +8,7 @@ const authMiddleware_1 = __importDefault(require("../middlewares/authMiddleware"
 const validator_1 = require("../middlewares/validator");
 const express = require('express');
 const router = express.Router();
+router.get('/filtered-books', authMiddleware_1.default, AdminController_1.getFilteredBooks);
 router.get('/filtered-owners', authMiddleware_1.default, AdminController_1.getFilteredOwners);
 router.post('/register', validator_1.validateRegister, AdminController_1.registerAdmin);
 router.post('/login', AdminController_1.loginAdmin);

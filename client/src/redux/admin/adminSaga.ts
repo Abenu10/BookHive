@@ -18,6 +18,9 @@ import {
   fetchFilteredOwnersStart,
   fetchFilteredOwnersSuccess,
   fetchFilteredOwnersFailure,
+  fetchFilteredBooksStart,
+  fetchFilteredBooksFailure,
+  fetchFilteredBooksSuccess,
 } from './adminSlice';
 import axios, {AxiosResponse} from 'axios';
 import api from '../../api/apiCall';
@@ -32,6 +35,29 @@ function* fetchBooks() {
     yield put(fetchBooksFailure(error));
   }
 }
+
+function* fetchFilteredBooks(action: ReturnType<typeof fetchFilteredBooksStart>) {
+  try {
+    const { search, id, title, author, category, owner, ownerLocation, status } = action.payload;
+    const queryParams = new URLSearchParams();
+    if (search) queryParams.append('search', search);
+    if (id) queryParams.append('id', id);
+    if (title) queryParams.append('title', title);
+    if (author) queryParams.append('author', author);
+    if (category) queryParams.append('category', category);
+    if (owner) queryParams.append('owner', owner);
+    if (ownerLocation) queryParams.append('ownerLocation', ownerLocation);
+    if (status) queryParams.append('status', status);
+    const queryString = queryParams.toString();
+    const url = `/admin/filtered-books${queryString ? `?${queryString}` : ''}`;
+    const response: AxiosResponse = yield call(api.get, url);
+    yield put(fetchFilteredBooksSuccess(response.data));
+  } catch (error) {
+    yield put(fetchFilteredBooksFailure(error.message));
+  }
+}
+
+
 
 function* deleteBook(action: ReturnType<typeof deleteBookStart>) {
   try {
@@ -66,12 +92,18 @@ function* toggleBookStatusSaga(action: ReturnType<typeof toggleBookStatusStart>)
     yield put(toggleBookStatusFailure(error.message));
   }
 }
+
 function* fetchFilteredOwners(action: ReturnType<typeof fetchFilteredOwnersStart>) {
   try {
-    const { search, location } = action.payload;
+    const { search, id, email, name, phoneNumber, location, status } = action.payload;
     const queryParams = new URLSearchParams();
     if (search) queryParams.append('search', search);
+    if (id) queryParams.append('id', id);
+    if (email) queryParams.append('email', email);
+    if (name) queryParams.append('name', name);
+    if (phoneNumber) queryParams.append('phoneNumber', phoneNumber);
     if (location) queryParams.append('location', location);
+    if (status) queryParams.append('status', status);
     const queryString = queryParams.toString();
     const url = `/admin/filtered-owners${queryString ? `?${queryString}` : ''}`;
     const response: AxiosResponse = yield call(api.get, url);
@@ -83,7 +115,7 @@ function* fetchFilteredOwners(action: ReturnType<typeof fetchFilteredOwnersStart
 
 export function* watchAdmin() {
   yield takeLatest(fetchBooksStart.type, fetchBooks);
-
+  yield takeLatest(fetchFilteredBooksStart.type, fetchFilteredBooks);
   yield takeLatest(deleteBookStart.type, deleteBook);
   yield takeLatest(fetchOwnersStart.type, fetchOwners);
   yield takeLatest(toggleOwnerStatusStart.type, toggleOwnerStatus);

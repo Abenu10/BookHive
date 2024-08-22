@@ -341,6 +341,40 @@ export const getAllOwnerBooks = async (req: Request, res: Response) => {
   }
 };
 
+export const getFilteredOwnerBooks = async (req: Request, res: Response) => {
+  const { search, id, title, author, category, status } = req.query;
+  const ownerId = (req as any).userId;
+
+  try {
+    let query: Prisma.BookWhereInput = { ownerId };
+
+    if (search) {
+      query.OR = [
+        { title: { contains: search as string, mode: "insensitive" } },
+        { author: { contains: search as string, mode: "insensitive" } },
+        { category: { name: { contains: search as string, mode: "insensitive" } } },
+      ];
+    }
+
+    if (id) query.id = { equals: parseInt(id as string) };
+    if (title) query.title = { contains: title as string, mode: "insensitive" };
+    if (author) query.author = { contains: author as string, mode: "insensitive" };
+    if (category) query.category = { name: { contains: category as string, mode: "insensitive" } };
+    if (status) query.status = status as Prisma.EnumBookStatusFilter;
+
+    const books = await prisma.book.findMany({
+      where: query,
+      include: { category: true },
+      orderBy: { title: "asc" },
+    });
+
+    res.json(books);
+  } catch (error) {
+    console.error("Error fetching filtered owner books:", error);
+    res.status(500).json({ error: "Error fetching filtered owner books" });
+  }
+};
+
 export const getAllOwnerBooksById = async (req: Request, res: Response) => {
   const {bookId} = req.params;
   const ownerId = (req as any).ownerId;
@@ -373,6 +407,8 @@ export const getAllOwnerBooksById = async (req: Request, res: Response) => {
     res.status(500).json({error: 'Error fetching owner book'});
   }
 };
+
+
 // deleteBook
 export const deleteBook = async (req: Request, res: Response) => {
   const {bookId} = req.params;

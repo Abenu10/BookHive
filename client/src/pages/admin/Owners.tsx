@@ -9,6 +9,7 @@ import {
   MaterialReactTable,
   type MRT_ColumnDef,
   type MRT_Row,
+  MRT_ColumnFiltersState
 } from 'material-react-table';
 import {
   Box,
@@ -17,6 +18,10 @@ import {
   Typography,
   Switch,
   Paper,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -27,6 +32,7 @@ import {
   toggleOwnerStatusStart,
 } from '../../redux/admin/adminSlice';
 import {RootState} from '../../redux/store';
+import {Can} from '../../contexts/AbilityContext';
 
 const AdminOwners: React.FC = () => {
   const dispatch = useDispatch();
@@ -34,37 +40,43 @@ const AdminOwners: React.FC = () => {
   
 const [globalFilter, setGlobalFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
+  const [columnFilters, setColumnFilters] = useState<MRT_ColumnFiltersState>([]);
+
+const debouncedSearch = useMemo(
+  () => debounce((filters: MRT_ColumnFiltersState, search: string, location: string) => {
+    const filterParams = {
+      search: search || undefined,
+      location: location || undefined,
+      id: filters.find(f => f.id === 'id')?.value as string,
+      email: filters.find(f => f.id === 'email')?.value as string,
+      name: filters.find(f => f.id === 'name')?.value as string,
+      phoneNumber: filters.find(f => f.id === 'phoneNumber')?.value as string,
+      status: filters.find(f => f.id === 'status')?.value as string || undefined,
+    };
+    dispatch(fetchFilteredOwnersStart(filterParams));
+  }, 300),
+  [dispatch]
+);
+
+
+ 
+useEffect(() => {
+  debouncedSearch(columnFilters, globalFilter, locationFilter);
+  return () => {
+    debouncedSearch.cancel();
+  };
+}, [globalFilter, locationFilter, columnFilters, debouncedSearch]);
+
 
 
     useEffect(() => {
     dispatch(fetchOwnersStart());
   }, [dispatch]);
 
-  const handleStatusToggle = (ownerId: string) => {
+  
+const handleStatusToggle = (ownerId: string) => {
     dispatch(toggleOwnerStatusStart(ownerId));
   };
-
-  // useEffect(() => {
-  //   dispatch(fetchOwnersStart());
-  // }, [dispatch]);
-
-   const debouncedSearch = useMemo(
-  () => debounce((search: string, location: string) => {
-    if (search || location) {
-      dispatch(fetchFilteredOwnersStart({ search, location }));
-    } else {
-      dispatch(fetchOwnersStart());
-    }
-  }, 300),
-  [dispatch]
-);
-
-  useEffect(() => {
-    debouncedSearch(globalFilter, locationFilter);
-    return () => {
-      debouncedSearch.cancel();
-    };
-  }, [globalFilter, locationFilter, debouncedSearch]);
 
   const handleGlobalFilterChange = (value: string) => {
     setGlobalFilter(value);
@@ -182,6 +194,26 @@ const [globalFilter, setGlobalFilter] = useState('');
             </Box>
           </Box>
         ),
+
+        Filter: ({ column }) => (
+          <FormControl fullWidth size="small">
+            <InputLabel id="status-select-label">Status</InputLabel>
+            <Select
+              labelId="status-select-label"
+              value={(column.getFilterValue() as string) ?? ''}
+              onChange={(e) => {
+                const value = e.target.value;
+                column.setFilterValue(e.target.value === '' ? undefined : value);
+              }}
+              label="Status"
+              sx={{ height: '37px' }}
+            >
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="ACTIVE">Active</MenuItem>
+              <MenuItem value="INACTIVE">Inactive</MenuItem>
+            </Select>
+          </FormControl>
+        ),
       },
       {
         header: 'Actions',
@@ -193,11 +225,7 @@ const [globalFilter, setGlobalFilter] = useState('');
                 <VisibilityIcon />
               </IconButton>
             </Tooltip>
-            {/* <Tooltip title='Delete'>
-            <IconButton size='medium'>
-              <DeleteIcon color='error' />
-            </IconButton>
-          </Tooltip> */}
+           
           </Box>
         ),
       },
@@ -205,6 +233,9 @@ const [globalFilter, setGlobalFilter] = useState('');
     []
   );
   return (
+    <Can I="read" a="Owners">
+
+    
     <Paper
       elevation={1}
       sx={{
@@ -224,8 +255,12 @@ const [globalFilter, setGlobalFilter] = useState('');
   enableSorting
   enableBottomToolbar
   enableTopToolbar
-  enableGlobalFilter={false} 
-  muiTopToolbarProps={{
+  manualFiltering
+  manualPagination
+  manualSorting
+  onColumnFiltersChange={setColumnFilters}
+  onGlobalFilterChange={setGlobalFilter}
+ muiTopToolbarProps={{
     sx: {
       backgroundColor: '#ffff',
     },
@@ -301,6 +336,7 @@ const [globalFilter, setGlobalFilter] = useState('');
   )}
 />
     </Paper>
+    </Can>
   );
 };
 

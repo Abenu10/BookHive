@@ -14,6 +14,7 @@ import {
   fetchBooksByCategoryStart,
 } from '../../redux/user/userSlice';
 import MainLayout from '../../components/Layout/MainLayout';
+import BookList from '../../components/user/BookList';
 
 const StyledGrid = styled(Grid)(({theme}) => ({
   [theme.breakpoints.up('sm')]: {
@@ -21,7 +22,7 @@ const StyledGrid = styled(Grid)(({theme}) => ({
   },
 }));
 
-const HomePage: React.FC = () => {
+const HomePage: React.FC<{ searchQuery: string }> = ({ searchQuery }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const {user, isAuthenticated} = useSelector((state: RootState) => state.auth);
@@ -29,7 +30,7 @@ const HomePage: React.FC = () => {
     (state: RootState) => state.user
   );
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-
+ 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     if (!token) {
@@ -40,6 +41,16 @@ const HomePage: React.FC = () => {
     }
   }, [navigate, dispatch]);
 
+  useEffect(() => {
+    
+  }, [availableBooks]);
+
+  useEffect(() => {
+    if (searchQuery) {
+     
+    }
+  }, [searchQuery, dispatch]);
+
   const handleCategorySelect = (categoryId: number) => {
     setSelectedCategory(categoryId);
     dispatch(fetchBooksByCategoryStart(categoryId));
@@ -49,6 +60,11 @@ const HomePage: React.FC = () => {
 
  return (
    <MainLayout>
+     {searchQuery && (
+        <Typography variant="subtitle1" sx={{ mb: 2 }}>
+          Search results for: "{searchQuery}"
+        </Typography>
+      )}
     <BrowseCategories
   categories={categories.map(cat => ({...cat, image: cat.image || placeholderImage}))}
   onCategorySelect={handleCategorySelect}
@@ -58,26 +74,7 @@ const HomePage: React.FC = () => {
          ? `Books in ${categories.find((c) => c.id === selectedCategory)?.name}`
          : 'Available Books'}
      </Typography>
-     {loading ? (
-       <Typography>Loading...</Typography>
-     ) : (
-       <Grid container spacing={4}>
-         {availableBooks.map((book) => (
-           <Grid item xs={12} sm={6} md={4} lg={3} key={book.id}>
-             <BookCard
-  id={book.id}
-  title={book.title}
-  author={book.author}
-  price={book.price}
-  rating={book.rating}
-  reviewCount={book.reviewCount}
-  image={book.coverImage}
-  availableQuantity={book.availableQuantity}
-/>
-           </Grid>
-         ))}
-       </Grid>
-     )}
+     <BookList books={availableBooks} loading={loading} />
    </MainLayout>
  );
 };

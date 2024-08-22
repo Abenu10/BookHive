@@ -1,7 +1,7 @@
-import {Request, Response} from 'express';
-import {PrismaClient, Prisma, Role} from '@prisma/client';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import {Request, Response} from "express";
+import {PrismaClient, Prisma, Role} from "@prisma/client";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
 
@@ -23,7 +23,7 @@ export const registerAdmin = async (req: Request, res: Response) => {
     });
 
     if (existingUser) {
-      return res.status(400).json({message: 'Name or email already exists'});
+      return res.status(400).json({message: "Name or email already exists"});
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -47,12 +47,12 @@ export const registerAdmin = async (req: Request, res: Response) => {
       payload,
       process.env.JWT_ACCESS_SECRET as string,
 
-      {expiresIn: '48h'}
+      {expiresIn: "48h"}
     );
     const refreshToken = jwt.sign(
       payload,
       process.env.JWT_REFRESH_SECRET as string,
-      {expiresIn: '7d'}
+      {expiresIn: "7d"}
     );
 
     res.status(201).json({
@@ -70,7 +70,7 @@ export const registerAdmin = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error(error); // Log the error for debugging
-    res.status(500).json({message: 'Something went wrong. Please try again.'});
+    res.status(500).json({message: "Something went wrong. Please try again."});
   }
 };
 
@@ -84,7 +84,7 @@ export const loginAdmin = async (req: Request, res: Response) => {
       !bcrypt.compareSync(password, user.password) ||
       user.role !== Role.ADMIN
     ) {
-      return res.status(401).json({message: 'Invalid credentials'});
+      return res.status(401).json({message: "Invalid credentials"});
     }
 
     const payload = {
@@ -96,12 +96,12 @@ export const loginAdmin = async (req: Request, res: Response) => {
     const accessToken = jwt.sign(
       payload,
       process.env.JWT_ACCESS_SECRET as string,
-      {expiresIn: '48h'}
+      {expiresIn: "48h"}
     );
     const refreshToken = jwt.sign(
       payload,
       process.env.JWT_REFRESH_SECRET as string,
-      {expiresIn: '7d'}
+      {expiresIn: "7d"}
     );
 
     return res.json({
@@ -118,8 +118,8 @@ export const loginAdmin = async (req: Request, res: Response) => {
       refresh_token: refreshToken,
     });
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({error: 'Error logging in'});
+    console.error("Login error:", error);
+    res.status(500).json({error: "Error logging in"});
   }
 };
 
@@ -130,8 +130,8 @@ export const getAllOwners = async (req: Request, res: Response) => {
 
     res.json(owners);
   } catch (error) {
-    console.error('Error fetching owners:', error);
-    res.status(500).json({error: 'Error fetching owners'});
+    console.error("Error fetching owners:", error);
+    res.status(500).json({error: "Error fetching owners"});
   }
 };
 
@@ -144,10 +144,10 @@ export const toggleOwnerStatus = async (req: Request, res: Response) => {
     });
 
     if (!owner) {
-      return res.status(404).json({error: 'Owner not found'});
+      return res.status(404).json({error: "Owner not found"});
     }
 
-    const newStatus = owner.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    const newStatus = owner.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
 
     const updatedOwner = await prisma.owner.update({
       where: {id: ownerId},
@@ -160,8 +160,8 @@ export const toggleOwnerStatus = async (req: Request, res: Response) => {
       status: updatedOwner.status,
     });
   } catch (error) {
-    console.error('Error toggling owner status:', error);
-    res.status(500).json({error: 'Error updating owner account status'});
+    console.error("Error toggling owner status:", error);
+    res.status(500).json({error: "Error updating owner account status"});
   }
 };
 
@@ -174,10 +174,10 @@ export const toggleBookStatus = async (req: Request, res: Response) => {
     });
 
     if (!book) {
-      return res.status(404).json({error: 'Book not found'});
+      return res.status(404).json({error: "Book not found"});
     }
 
-    const newStatus = book.status === 'APPROVED' ? 'PENDING' : 'APPROVED';
+    const newStatus = book.status === "APPROVED" ? "PENDING" : "APPROVED";
 
     const updatedBook = await prisma.book.update({
       where: {id: parseInt(bookId)},
@@ -190,8 +190,8 @@ export const toggleBookStatus = async (req: Request, res: Response) => {
       status: updatedBook.status,
     });
   } catch (error) {
-    console.error('Error toggling book status:', error);
-    res.status(500).json({error: 'Error updating book status'});
+    console.error("Error toggling book status:", error);
+    res.status(500).json({error: "Error updating book status"});
   }
 };
 
@@ -203,22 +203,67 @@ export const getAllBooks = async (req: Request, res: Response) => {
     });
     const formattedBooks = books.map((book) => ({
       ...book,
-      categoryName: book.category?.name || 'Uncategoriezed',
+      categoryName: book.category?.name || "Uncategoriezed",
     }));
 
     res.json(formattedBooks);
   } catch (error) {
-    console.error('Error fetching books:', error);
-    res.status(500).json({error: 'Error fetching books'});
+    console.error("Error fetching books:", error);
+    res.status(500).json({error: "Error fetching books"});
   }
 };
+
+export const getFilteredBooks = async (req: Request, res: Response) => {
+  const { search, id, title, author, category, owner, ownerLocation, status } = req.query;
+
+  try {
+    let query: Prisma.BookWhereInput = {};
+
+    if (search) {
+      query.OR = [
+        { title: { contains: search as string, mode: "insensitive" } },
+        { author: { contains: search as string, mode: "insensitive" } },
+        { owner: { name: { contains: search as string, mode: "insensitive" } } },
+        { category: { name: { contains: search as string, mode: "insensitive" } } },
+      ];
+    }
+
+    if (id) query.id = { equals: parseInt(id as string) };
+    if (title) query.title = { contains: title as string, mode: "insensitive" };
+    if (author) query.author = { contains: author as string, mode: "insensitive" };
+    if (category) query.category = { name: { contains: category as string, mode: "insensitive" } };
+    if (owner) query.owner = { name: { contains: owner as string, mode: "insensitive" } };
+    if (ownerLocation) query.owner = { location: { contains: ownerLocation as string, mode: "insensitive" } };
+    if (status) query.status = status as Prisma.EnumBookStatusFilter;
+
+    const books = await prisma.book.findMany({
+      where: query,
+      include: { owner: true, category: true },
+      orderBy: { title: "asc" },
+    });
+
+    const formattedBooks = books.map((book) => ({
+      ...book,
+      categoryName: book.category?.name || "Uncategorized",
+      ownerLocation: book.owner.location,
+    }));
+
+    res.json(formattedBooks);
+  } catch (error) {
+    console.error("Error fetching filtered books:", error);
+    res.status(500).json({ error: "Error fetching filtered books" });
+  }
+};
+
+
+
 // deletee book
 export const deleteBook = async (req: Request, res: Response) => {
   const {bookId} = req.params;
   const userId = (req as any).userId;
 
   if (!userId) {
-    return res.status(400).json({error: 'Owner ID is required'});
+    return res.status(400).json({error: "Owner ID is required"});
   }
 
   try {
@@ -228,7 +273,7 @@ export const deleteBook = async (req: Request, res: Response) => {
     });
 
     if (!book) {
-      return res.status(404).json({error: 'Book not found'});
+      return res.status(404).json({error: "Book not found"});
     }
 
     await prisma.book.delete({
@@ -236,7 +281,7 @@ export const deleteBook = async (req: Request, res: Response) => {
     });
 
     res.json({
-      message: 'Book deleted successfully',
+      message: "Book deleted successfully",
       deletedBook: {
         id: book.id,
         title: book.title,
@@ -245,8 +290,8 @@ export const deleteBook = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Error deleting book:', error);
-    res.status(500).json({error: 'Error deleting book'});
+    console.error("Error deleting book:", error);
+    res.status(500).json({error: "Error deleting book"});
   }
 };
 
@@ -261,7 +306,7 @@ export const createCategory = async (req: Request, res: Response) => {
 
     if (existingCategory) {
       return res.status(400).json({
-        message: 'A category with this name already exists',
+        message: "A category with this name already exists",
         categoryId: existingCategory.id,
       });
     }
@@ -270,25 +315,37 @@ export const createCategory = async (req: Request, res: Response) => {
     });
 
     res.status(201).json({
-      message: 'Category created successfully',
+      message: "Category created successfully",
       categoryId: category.id,
     });
   } catch (error) {
-    console.error('Error creating category:', error);
-    res.status(500).json({error: 'Error creating category'});
+    console.error("Error creating category:", error);
+    res.status(500).json({error: "Error creating category"});
   }
 };
 // delete category
 export const deleteCategory = async (req: Request, res: Response) => {
   const {id} = req.params;
   try {
+    // Check if there are any books associated with this category
+    const booksInCategory = await prisma.book.count({
+      where: {categoryId: parseInt(id)},
+    });
+
+    if (booksInCategory > 0) {
+      return res.status(400).json({
+        error:
+          "Cannot delete category. There are books associated with this category.",
+      });
+    }
+
     await prisma.category.delete({
       where: {id: parseInt(id)},
     });
-    res.json({message: 'Category deleted successfully'});
+    res.json({message: "Category deleted successfully"});
   } catch (error) {
-    console.error('Error deleting category:', error);
-    res.status(500).json({error: 'Error deleting category'});
+    console.error("Error deleting category:", error);
+    res.status(500).json({error: "Error deleting category"});
   }
 };
 
@@ -301,11 +358,11 @@ export const updateAdmin = async (req: Request, res: Response) => {
     const existingUser = await prisma.user.findUnique({where: {id}});
 
     if (!existingUser || existingUser.role !== Role.ADMIN) {
-      return res.status(403).json({message: 'Forbidden'});
+      return res.status(403).json({message: "Forbidden"});
     }
 
     if (!existingUser) {
-      return res.status(404).json({error: 'User not found'});
+      return res.status(404).json({error: "User not found"});
     }
 
     const updatedUser = await prisma.user.update({
@@ -316,8 +373,8 @@ export const updateAdmin = async (req: Request, res: Response) => {
 
     res.json(updatedUser);
   } catch (error) {
-    console.error('Error updating admin:', error);
-    res.status(500).json({error: 'Error updating admin'});
+    console.error("Error updating admin:", error);
+    res.status(500).json({error: "Error updating admin"});
   }
 };
 // delete admin
@@ -328,38 +385,41 @@ export const deleteAdmin = async (req: Request, res: Response) => {
     await prisma.wallet.delete({where: {userId: id}});
     await prisma.user.delete({where: {id}});
 
-    res.json({message: 'Admin deleted successfully'});
+    res.json({message: "Admin deleted successfully"});
   } catch (error) {
-    console.error('Error deleting admin:', error);
-    res.status(500).json({error: 'Error deleting admin'});
+    console.error("Error deleting admin:", error);
+    res.status(500).json({error: "Error deleting admin"});
   }
 };
 // get flterd owners
 export const getFilteredOwners = async (req: Request, res: Response) => {
-  const {search, location} = req.query;
+  const { search, id, email, name, phoneNumber, location, status } = req.query;
 
   try {
     let query: Prisma.OwnerWhereInput = {};
 
     if (search) {
       query.OR = [
-        {name: {contains: search as string, mode: 'insensitive'}},
-        {email: {contains: search as string, mode: 'insensitive'}},
+        { name: { contains: search as string, mode: "insensitive" } },
+        { email: { contains: search as string, mode: "insensitive" } },
       ];
     }
 
-    if (location) {
-      query.location = {contains: location as string, mode: 'insensitive'};
-    }
+    if (id) query.id = { equals: id as string };
+    if (email) query.email = { contains: email as string, mode: "insensitive" };
+    if (name) query.name = { contains: name as string, mode: "insensitive" };
+    if (phoneNumber) query.phoneNumber = { contains: phoneNumber as string, mode: "insensitive" };
+    if (location) query.location = { contains: location as string, mode: "insensitive" };
+    if (status) query.status = status as Prisma.EnumOwnerStatusFilter;
 
     const owners = await prisma.owner.findMany({
       where: query,
-      orderBy: {name: 'asc'},
+      orderBy: { name: "asc" },
     });
 
     res.json(owners);
   } catch (error) {
-    console.error('Error fetching filtered owners:', error);
-    res.status(500).json({error: 'Error fetching filtered owners'});
+    console.error("Error fetching filtered owners:", error);
+    res.status(500).json({ error: "Error fetching filtered owners" });
   }
 };

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getFilteredOwners = exports.deleteAdmin = exports.updateAdmin = exports.deleteCategory = exports.createCategory = exports.deleteBook = exports.getAllBooks = exports.toggleBookStatus = exports.toggleOwnerStatus = exports.getAllOwners = exports.loginAdmin = exports.registerAdmin = void 0;
+exports.getFilteredOwners = exports.deleteAdmin = exports.updateAdmin = exports.deleteCategory = exports.createCategory = exports.deleteBook = exports.getFilteredBooks = exports.getAllBooks = exports.toggleBookStatus = exports.toggleOwnerStatus = exports.getAllOwners = exports.loginAdmin = exports.registerAdmin = void 0;
 const client_1 = require("@prisma/client");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -26,7 +26,7 @@ const registerAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             },
         });
         if (existingUser) {
-            return res.status(400).json({ message: 'Name or email already exists' });
+            return res.status(400).json({ message: "Name or email already exists" });
         }
         const hashedPassword = yield bcryptjs_1.default.hash(password, 10);
         const user = yield prisma.user.create({
@@ -43,8 +43,8 @@ const registerAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             },
         });
         const payload = { id: user.id, name: user.name, email: user.email };
-        const accessToken = jsonwebtoken_1.default.sign(payload, process.env.JWT_ACCESS_SECRET, { expiresIn: '48h' });
-        const refreshToken = jsonwebtoken_1.default.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+        const accessToken = jsonwebtoken_1.default.sign(payload, process.env.JWT_ACCESS_SECRET, { expiresIn: "48h" });
+        const refreshToken = jsonwebtoken_1.default.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
         res.status(201).json({
             user: {
                 id: user.id,
@@ -61,7 +61,7 @@ const registerAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
     catch (error) {
         console.error(error); // Log the error for debugging
-        res.status(500).json({ message: 'Something went wrong. Please try again.' });
+        res.status(500).json({ message: "Something went wrong. Please try again." });
     }
 });
 exports.registerAdmin = registerAdmin;
@@ -72,15 +72,15 @@ const loginAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         if (!user ||
             !bcryptjs_1.default.compareSync(password, user.password) ||
             user.role !== client_1.Role.ADMIN) {
-            return res.status(401).json({ message: 'Invalid credentials' });
+            return res.status(401).json({ message: "Invalid credentials" });
         }
         const payload = {
             id: user.id,
             name: user.name,
             email: user.email,
         };
-        const accessToken = jsonwebtoken_1.default.sign(payload, process.env.JWT_ACCESS_SECRET, { expiresIn: '48h' });
-        const refreshToken = jsonwebtoken_1.default.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+        const accessToken = jsonwebtoken_1.default.sign(payload, process.env.JWT_ACCESS_SECRET, { expiresIn: "48h" });
+        const refreshToken = jsonwebtoken_1.default.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
         return res.json({
             user: {
                 id: user.id,
@@ -96,8 +96,8 @@ const loginAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         });
     }
     catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ error: 'Error logging in' });
+        console.error("Login error:", error);
+        res.status(500).json({ error: "Error logging in" });
     }
 });
 exports.loginAdmin = loginAdmin;
@@ -108,8 +108,8 @@ const getAllOwners = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         res.json(owners);
     }
     catch (error) {
-        console.error('Error fetching owners:', error);
-        res.status(500).json({ error: 'Error fetching owners' });
+        console.error("Error fetching owners:", error);
+        res.status(500).json({ error: "Error fetching owners" });
     }
 });
 exports.getAllOwners = getAllOwners;
@@ -120,9 +120,9 @@ const toggleOwnerStatus = (req, res) => __awaiter(void 0, void 0, void 0, functi
             where: { id: ownerId },
         });
         if (!owner) {
-            return res.status(404).json({ error: 'Owner not found' });
+            return res.status(404).json({ error: "Owner not found" });
         }
-        const newStatus = owner.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+        const newStatus = owner.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
         const updatedOwner = yield prisma.owner.update({
             where: { id: ownerId },
             data: { status: newStatus },
@@ -134,8 +134,8 @@ const toggleOwnerStatus = (req, res) => __awaiter(void 0, void 0, void 0, functi
         });
     }
     catch (error) {
-        console.error('Error toggling owner status:', error);
-        res.status(500).json({ error: 'Error updating owner account status' });
+        console.error("Error toggling owner status:", error);
+        res.status(500).json({ error: "Error updating owner account status" });
     }
 });
 exports.toggleOwnerStatus = toggleOwnerStatus;
@@ -146,9 +146,9 @@ const toggleBookStatus = (req, res) => __awaiter(void 0, void 0, void 0, functio
             where: { id: parseInt(bookId) },
         });
         if (!book) {
-            return res.status(404).json({ error: 'Book not found' });
+            return res.status(404).json({ error: "Book not found" });
         }
-        const newStatus = book.status === 'APPROVED' ? 'PENDING' : 'APPROVED';
+        const newStatus = book.status === "APPROVED" ? "PENDING" : "APPROVED";
         const updatedBook = yield prisma.book.update({
             where: { id: parseInt(bookId) },
             data: { status: newStatus },
@@ -160,8 +160,8 @@ const toggleBookStatus = (req, res) => __awaiter(void 0, void 0, void 0, functio
         });
     }
     catch (error) {
-        console.error('Error toggling book status:', error);
-        res.status(500).json({ error: 'Error updating book status' });
+        console.error("Error toggling book status:", error);
+        res.status(500).json({ error: "Error updating book status" });
     }
 });
 exports.toggleBookStatus = toggleBookStatus;
@@ -173,22 +173,65 @@ const getAllBooks = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         });
         const formattedBooks = books.map((book) => {
             var _a;
-            return (Object.assign(Object.assign({}, book), { categoryName: ((_a = book.category) === null || _a === void 0 ? void 0 : _a.name) || 'Uncategoriezed' }));
+            return (Object.assign(Object.assign({}, book), { categoryName: ((_a = book.category) === null || _a === void 0 ? void 0 : _a.name) || "Uncategoriezed" }));
         });
         res.json(formattedBooks);
     }
     catch (error) {
-        console.error('Error fetching books:', error);
-        res.status(500).json({ error: 'Error fetching books' });
+        console.error("Error fetching books:", error);
+        res.status(500).json({ error: "Error fetching books" });
     }
 });
 exports.getAllBooks = getAllBooks;
+const getFilteredBooks = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { search, id, title, author, category, owner, ownerLocation, status } = req.query;
+    try {
+        let query = {};
+        if (search) {
+            query.OR = [
+                { title: { contains: search, mode: "insensitive" } },
+                { author: { contains: search, mode: "insensitive" } },
+                { owner: { name: { contains: search, mode: "insensitive" } } },
+                { category: { name: { contains: search, mode: "insensitive" } } },
+            ];
+        }
+        if (id)
+            query.id = { equals: parseInt(id) };
+        if (title)
+            query.title = { contains: title, mode: "insensitive" };
+        if (author)
+            query.author = { contains: author, mode: "insensitive" };
+        if (category)
+            query.category = { name: { contains: category, mode: "insensitive" } };
+        if (owner)
+            query.owner = { name: { contains: owner, mode: "insensitive" } };
+        if (ownerLocation)
+            query.owner = { location: { contains: ownerLocation, mode: "insensitive" } };
+        if (status)
+            query.status = status;
+        const books = yield prisma.book.findMany({
+            where: query,
+            include: { owner: true, category: true },
+            orderBy: { title: "asc" },
+        });
+        const formattedBooks = books.map((book) => {
+            var _a;
+            return (Object.assign(Object.assign({}, book), { categoryName: ((_a = book.category) === null || _a === void 0 ? void 0 : _a.name) || "Uncategorized", ownerLocation: book.owner.location }));
+        });
+        res.json(formattedBooks);
+    }
+    catch (error) {
+        console.error("Error fetching filtered books:", error);
+        res.status(500).json({ error: "Error fetching filtered books" });
+    }
+});
+exports.getFilteredBooks = getFilteredBooks;
 // deletee book
 const deleteBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { bookId } = req.params;
     const userId = req.userId;
     if (!userId) {
-        return res.status(400).json({ error: 'Owner ID is required' });
+        return res.status(400).json({ error: "Owner ID is required" });
     }
     try {
         const book = yield prisma.book.findUnique({
@@ -196,13 +239,13 @@ const deleteBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             include: { owner: true },
         });
         if (!book) {
-            return res.status(404).json({ error: 'Book not found' });
+            return res.status(404).json({ error: "Book not found" });
         }
         yield prisma.book.delete({
             where: { id: parseInt(bookId) },
         });
         res.json({
-            message: 'Book deleted successfully',
+            message: "Book deleted successfully",
             deletedBook: {
                 id: book.id,
                 title: book.title,
@@ -212,8 +255,8 @@ const deleteBook = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         });
     }
     catch (error) {
-        console.error('Error deleting book:', error);
-        res.status(500).json({ error: 'Error deleting book' });
+        console.error("Error deleting book:", error);
+        res.status(500).json({ error: "Error deleting book" });
     }
 });
 exports.deleteBook = deleteBook;
@@ -226,7 +269,7 @@ const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
         });
         if (existingCategory) {
             return res.status(400).json({
-                message: 'A category with this name already exists',
+                message: "A category with this name already exists",
                 categoryId: existingCategory.id,
             });
         }
@@ -234,13 +277,13 @@ const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
             data: categoryData,
         });
         res.status(201).json({
-            message: 'Category created successfully',
+            message: "Category created successfully",
             categoryId: category.id,
         });
     }
     catch (error) {
-        console.error('Error creating category:', error);
-        res.status(500).json({ error: 'Error creating category' });
+        console.error("Error creating category:", error);
+        res.status(500).json({ error: "Error creating category" });
     }
 });
 exports.createCategory = createCategory;
@@ -248,14 +291,23 @@ exports.createCategory = createCategory;
 const deleteCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     try {
+        // Check if there are any books associated with this category
+        const booksInCategory = yield prisma.book.count({
+            where: { categoryId: parseInt(id) },
+        });
+        if (booksInCategory > 0) {
+            return res.status(400).json({
+                error: "Cannot delete category. There are books associated with this category.",
+            });
+        }
         yield prisma.category.delete({
             where: { id: parseInt(id) },
         });
-        res.json({ message: 'Category deleted successfully' });
+        res.json({ message: "Category deleted successfully" });
     }
     catch (error) {
-        console.error('Error deleting category:', error);
-        res.status(500).json({ error: 'Error deleting category' });
+        console.error("Error deleting category:", error);
+        res.status(500).json({ error: "Error deleting category" });
     }
 });
 exports.deleteCategory = deleteCategory;
@@ -266,10 +318,10 @@ const updateAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     try {
         const existingUser = yield prisma.user.findUnique({ where: { id } });
         if (!existingUser || existingUser.role !== client_1.Role.ADMIN) {
-            return res.status(403).json({ message: 'Forbidden' });
+            return res.status(403).json({ message: "Forbidden" });
         }
         if (!existingUser) {
-            return res.status(404).json({ error: 'User not found' });
+            return res.status(404).json({ error: "User not found" });
         }
         const updatedUser = yield prisma.user.update({
             where: { id },
@@ -279,8 +331,8 @@ const updateAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         res.json(updatedUser);
     }
     catch (error) {
-        console.error('Error updating admin:', error);
-        res.status(500).json({ error: 'Error updating admin' });
+        console.error("Error updating admin:", error);
+        res.status(500).json({ error: "Error updating admin" });
     }
 });
 exports.updateAdmin = updateAdmin;
@@ -290,37 +342,46 @@ const deleteAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     try {
         yield prisma.wallet.delete({ where: { userId: id } });
         yield prisma.user.delete({ where: { id } });
-        res.json({ message: 'Admin deleted successfully' });
+        res.json({ message: "Admin deleted successfully" });
     }
     catch (error) {
-        console.error('Error deleting admin:', error);
-        res.status(500).json({ error: 'Error deleting admin' });
+        console.error("Error deleting admin:", error);
+        res.status(500).json({ error: "Error deleting admin" });
     }
 });
 exports.deleteAdmin = deleteAdmin;
 // get flterd owners
 const getFilteredOwners = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { search, location } = req.query;
+    const { search, id, email, name, phoneNumber, location, status } = req.query;
     try {
         let query = {};
         if (search) {
             query.OR = [
-                { name: { contains: search, mode: 'insensitive' } },
-                { email: { contains: search, mode: 'insensitive' } },
+                { name: { contains: search, mode: "insensitive" } },
+                { email: { contains: search, mode: "insensitive" } },
             ];
         }
-        if (location) {
-            query.location = { contains: location, mode: 'insensitive' };
-        }
+        if (id)
+            query.id = { equals: id };
+        if (email)
+            query.email = { contains: email, mode: "insensitive" };
+        if (name)
+            query.name = { contains: name, mode: "insensitive" };
+        if (phoneNumber)
+            query.phoneNumber = { contains: phoneNumber, mode: "insensitive" };
+        if (location)
+            query.location = { contains: location, mode: "insensitive" };
+        if (status)
+            query.status = status;
         const owners = yield prisma.owner.findMany({
             where: query,
-            orderBy: { name: 'asc' },
+            orderBy: { name: "asc" },
         });
         res.json(owners);
     }
     catch (error) {
-        console.error('Error fetching filtered owners:', error);
-        res.status(500).json({ error: 'Error fetching filtered owners' });
+        console.error("Error fetching filtered owners:", error);
+        res.status(500).json({ error: "Error fetching filtered owners" });
     }
 });
 exports.getFilteredOwners = getFilteredOwners;

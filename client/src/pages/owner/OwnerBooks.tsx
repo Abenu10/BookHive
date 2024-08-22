@@ -1,8 +1,11 @@
 import MuiAlert, {AlertProps} from '@mui/material/Alert';
 import React, {useEffect, useMemo, useState} from 'react';
+import SearchIcon from '@mui/icons-material/Search';
+
 import {useDispatch, useSelector} from 'react-redux';
 import {
   MaterialReactTable,
+  MRT_ColumnFiltersState,
   type MRT_ColumnDef,
   type MRT_Row,
 } from 'material-react-table';
@@ -24,6 +27,7 @@ import {
   MenuItem,
   TextField,
   Snackbar,
+  InputAdornment,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -34,11 +38,13 @@ import {
   updateBookStart,
   deleteBookStart,
   clearSuccessMessage,
+  fetchFilteredBooksStart,
 } from '../../redux/owner/ownerSlice';
 import {RootState} from '../../redux/store';
 import {fetchCategoriesStart} from '../../redux/category/categorySlice';
 import {useTheme} from '@mui/material/styles';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+import { debounce } from 'lodash';
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(function Alert(
   props,
@@ -62,6 +68,32 @@ const OwnerBookList: React.FC = () => {
   const [localSuccessMessage, setLocalSuccessMessage] = useState<string | null>(
     null
   );
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [columnFilters, setColumnFilters] = useState<MRT_ColumnFiltersState>([]);
+
+  const debouncedSearch = useMemo(
+    () => debounce((filters: MRT_ColumnFiltersState, search: string) => {
+      const filterParams = {
+        search: search || undefined,
+        id: filters.find(f => f.id === 'id')?.value as string,
+        title: filters.find(f => f.id === 'title')?.value as string,
+        author: filters.find(f => f.id === 'author')?.value as string,
+        category: filters.find(f => f.id === 'category.name')?.value as string,
+        status: filters.find(f => f.id === 'status')?.value as string || undefined,
+      };
+      dispatch(fetchFilteredBooksStart(filterParams));
+    }, 300),
+    [dispatch]
+  );
+
+  useEffect(() => {
+    debouncedSearch(columnFilters, globalFilter);
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [globalFilter, columnFilters, debouncedSearch]);
+
+
 
   useEffect(() => {
     dispatch(fetchCategoriesStart());
@@ -130,6 +162,8 @@ const OwnerBookList: React.FC = () => {
     setOpenSnackbar(false);
   };
 
+  
+
   const columns = useMemo<MRT_ColumnDef<any>[]>(
     () => [
       {
@@ -148,7 +182,7 @@ const OwnerBookList: React.FC = () => {
         size: 120,
       },
       {
-        accessorKey: 'categoryName',
+        accessorKey: 'category.name',
         header: 'Category',
         size: 100,
       },
@@ -194,6 +228,22 @@ const OwnerBookList: React.FC = () => {
             </Typography>
           </Box>
         ),
+        Filter: ({ column }) => (
+          <FormControl fullWidth size="small">
+            <InputLabel id="status-select-label">Status</InputLabel>
+            <Select
+              labelId="status-select-label"
+              value={(column.getFilterValue() as string) ?? ''}
+              onChange={(e) => column.setFilterValue(e.target.value)}
+              label="Status"
+              sx={{ height: '37px' }}
+            >
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="APPROVED">Approved</MenuItem>
+              <MenuItem value="PENDING">Pending</MenuItem>
+            </Select>
+          </FormControl>
+        ),
       },
       {
         header: 'Actions',
@@ -231,15 +281,21 @@ const OwnerBookList: React.FC = () => {
       }}
     >
       <MaterialReactTable
-        columns={columns}
-        data={books}
-        enableColumnActions={false}
-        enableColumnFilters
-        enablePagination
-        enableSorting
-        enableBottomToolbar
-        enableTopToolbar
-        muiTopToolbarProps={{
+      columns={columns}
+      data={books}
+      enableColumnActions={false}
+      enableColumnFilters
+      enablePagination
+      enableSorting
+      enableBottomToolbar
+      enableTopToolbar
+      manualFiltering
+      manualPagination
+      manualSorting
+      onColumnFiltersChange={setColumnFilters}
+      onGlobalFilterChange={setGlobalFilter}
+  
+      muiTopToolbarProps={{
           sx: {
             backgroundColor: '#ffff',
           },
@@ -271,11 +327,38 @@ const OwnerBookList: React.FC = () => {
             backgroundColor: '#ffffff',
           },
         }}
-        state={{isLoading: loading}}
+        state={{ isLoading: loading, columnFilters, globalFilter }}
+ 
         renderTopToolbarCustomActions={() => (
-          <Typography variant='h6' component='div' sx={{flexGrow: 1, p: 1.5}}>
+          <Box sx={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <Typography
+            variant='h6'
+            component='div'
+            sx={{
+              flexGrow: 1,
+              p: 1.5,
+              fontSize: '1.2rem',
+            }}
+          >
             My Books
           </Typography>
+          <TextField
+            placeholder="Search by title, author, or category..."
+            value={globalFilter ?? ''}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            size="small"
+            sx={{
+              width: '350px',
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
         )}
       />
       <Dialog

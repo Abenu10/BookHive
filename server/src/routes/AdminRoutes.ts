@@ -11,6 +11,8 @@ import {
   toggleBookStatus,
   getFilteredOwners,
   deleteCategory,
+  getFilteredBooks,
+  
 } from '../controllers/AdminController';
 import verifyToken from '../middlewares/authMiddleware';
 import {validateRegister} from '../middlewares/validator';
@@ -18,6 +20,7 @@ import {validateRegister} from '../middlewares/validator';
 const express = require('express');
 const router = express.Router();
 
+router.get('/filtered-books', verifyToken, getFilteredBooks);
 router.get('/filtered-owners', verifyToken, getFilteredOwners);
 router.post('/register', validateRegister, registerAdmin);
 router.post('/login', loginAdmin);
@@ -34,5 +37,7 @@ router.get('/get-all-books', verifyToken, getAllBooks);
 router.delete('/book/:bookId', verifyToken, deleteBook);
 router.post('/create-category', verifyToken, createCategory);
 router.delete('/category/delete/:id', verifyToken, deleteCategory);
+
+
 
 export default router;

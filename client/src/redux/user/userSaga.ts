@@ -21,7 +21,10 @@ import {
   fetchUserRentalsStart,
   toggleRentalStatusSuccess,
   toggleRentalStatusFailure,
-  toggleRentalStatusStart
+  toggleRentalStatusStart,
+  searchBooksSuccess,
+  searchBooksFailure,
+  searchBooksStart
 } from './userSlice';
 import api from '../../api/apiCall';
 import {AxiosResponse} from 'axios';
@@ -131,7 +134,17 @@ function* toggleRentalStatus(action: ReturnType<typeof toggleRentalStatusStart>)
     yield put(toggleRentalStatusFailure(error.response?.data?.error || 'Error toggling rental status'));
   }
 }
-
+function* searchBooks(action: ReturnType<typeof searchBooksStart>) {
+  try {
+    const response: AxiosResponse = yield call(
+      api.get,
+      `/users/search/book?query=${action.payload}`
+    );
+    yield put(searchBooksSuccess(response.data));
+  } catch (error) {
+    yield put(searchBooksFailure(error.message));
+  }
+}
 
 
 export function* watchUser() {
@@ -143,4 +156,5 @@ export function* watchUser() {
   yield takeLatest(fetchUserRentalsStart.type, fetchUserRentals);
 yield takeLatest(fetchBookDetailStart.type, checkIfBookRented);
 yield takeLatest(toggleRentalStatusStart.type, toggleRentalStatus);
+yield takeLatest(searchBooksStart.type, searchBooks);
 }

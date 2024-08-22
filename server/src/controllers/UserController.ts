@@ -438,3 +438,46 @@ export const getCategories = async (req: Request, res: Response) => {
     res.status(500).json({error: 'Error fetching categories'});
   }
 };
+
+// search book
+export const searchBooks = async (req: Request, res: Response) => {
+  const { query } = req.query;
+
+  try {
+    const books = await prisma.book.findMany({
+      where: {
+        OR: [
+          { title: { contains: query as string, mode: 'insensitive' } },
+          { author: { contains: query as string, mode: 'insensitive' } },
+          { category: { name: { contains: query as string, mode: 'insensitive' } } },
+        ],
+        status: 'APPROVED',
+        // availableQuantity: { gt: 0 },
+      },
+      include: {
+        category: { select: { name: true } },
+        owner: { select: { name: true, location: true } },
+      },
+    });
+
+    const formattedBooks = books.map((book) => ({
+      id: book.id,
+      title: book.title,
+      author: book.author,
+      coverImage: book.coverImage,
+      description: book.description,
+      category: book.category.name,
+      availableQuantity: book.availableQuantity,
+      price: book.price,
+      rating: book.rating,
+      reviewCount: book.reviewCount,
+      ownerName: book.owner.name,
+      ownerLocation: book.owner.location,
+    }));
+
+    res.json(formattedBooks);
+  } catch (error) {
+    console.error('Error searching books:', error);
+    res.status(500).json({ error: 'Error searching books' });
+  }
+};

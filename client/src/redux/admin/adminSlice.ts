@@ -51,6 +51,18 @@ const adminSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
+    fetchFilteredBooksStart(state, action: PayloadAction<{ search?: string, category?: string, status?: string, ownerLocation?: string }>) {
+      state.loading = true;
+      state.error = null;
+    },
+    fetchFilteredBooksSuccess(state, action: PayloadAction<Book[]>) {
+      state.books = action.payload;
+      state.loading = false;
+    },
+    fetchFilteredBooksFailure(state, action: PayloadAction<string>) {
+      state.loading = false;
+      state.error = action.payload;
+    },
     toggleBookStatusStart(state, action: PayloadAction<number>) {
       state.loading = true;
       state.error = null;
@@ -120,6 +132,7 @@ fetchFilteredOwnersFailure(state, action: PayloadAction<string>) {
   state.loading = false;
   state.error = action.payload;
 },
+
   },
 });
 
@@ -127,6 +140,9 @@ export const {
   fetchBooksStart,
   fetchBooksSuccess,
   fetchBooksFailure,
+  fetchFilteredBooksStart,
+  fetchFilteredBooksSuccess,
+  fetchFilteredBooksFailure,
 
   deleteBookStart,
   deleteBookSuccess,
@@ -143,6 +159,7 @@ export const {
 fetchFilteredOwnersStart,
 fetchFilteredOwnersSuccess,
 fetchFilteredOwnersFailure  
+
 } = adminSlice.actions;
 
 export default adminSlice.reducer;
