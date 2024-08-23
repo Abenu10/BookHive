@@ -1,9 +1,11 @@
 import {Request, Response, NextFunction} from 'express';
 import jwt from 'jsonwebtoken';
 
-// Extend the Request interface
 interface CustomRequest extends Request {
-  ownerId?: string;
+  user?: {
+    id: string;
+    role: string;
+  };
 }
 
 const verifyOwnerToken = (
@@ -11,19 +13,27 @@ const verifyOwnerToken = (
   res: Response,
   next: NextFunction
 ) => {
-  const token = req.headers['authorization']?.split(' ')[1];
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    return res.status(403).send({message: 'No token provided!'});
+    return res.status(401).json({ message: 'No token provided' });
   }
 
-  jwt.verify(token, process.env.JWT_ACCESS_SECRET as string, (err, decoded) => {
-    if (err) {
-      return res.status(401).send({message: 'Unauthorized!'});
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET as string) as any;
+    req.user = {
+      id: decoded.id,
+      role: decoded.role
+    };
+    if (req.user.role !== 'OWNER') {
+      return res.status(403).json({ message: 'Access denied. Owner role required.' });
     }
-    req.ownerId = (decoded as any).id;
     next();
-  });
+  } catch (error) {
+    console.error('Token verification failed:', error);
+    return res.status(403).json({ message: 'Invalid token' });
+  }
 };
 
 export default verifyOwnerToken;

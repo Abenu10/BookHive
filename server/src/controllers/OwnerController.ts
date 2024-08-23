@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import {z} from 'zod';
 import {uploadToCloudinary, removeFromCloudinary} from '../services/Cloudinary';
+import { buildAbility } from '../config/caslAbility';
 
 const prisma = new PrismaClient();
 
@@ -11,7 +12,6 @@ const withdrawSchema = z.object({
   amount: z.number().positive(),
 });
 
-// Owner endpoints
 export const registerOwner = async (req: Request, res: Response) => {
   const {
     name,
@@ -91,16 +91,11 @@ export const loginOwner = async (req: Request, res: Response) => {
       return res.status(401).json({message: 'Invalid credentials'});
     }
 
-    // if (owner.status === 'INACTIVE') {
-    //   return res
-    //     .status(403)
-    //     .json({message: 'Account not activated. Please contact admin.'});
-    // }
-
     const payload = {
       id: owner.id,
       name: owner.name,
       email: owner.email,
+      role: 'OWNER', // Explicitly set the role
     };
 
     const accessToken = jwt.sign(
@@ -114,7 +109,7 @@ export const loginOwner = async (req: Request, res: Response) => {
       {expiresIn: '7d'}
     );
 
-    res.status(201).json({
+    res.status(200).json({
       user: {
         id: owner.id,
         name: owner.name,
@@ -133,8 +128,10 @@ export const loginOwner = async (req: Request, res: Response) => {
   }
 };
 
-// TODO Book endpoints    TEST
 export const createBook = async (req: Request, res: Response) => {
+  const ability = buildAbility((req as any).user.role);
+  
+  if (ability.can('create', 'Book')) {
   const {
     title,
     author,
@@ -145,7 +142,7 @@ export const createBook = async (req: Request, res: Response) => {
     quantity,
   } = req.body;
 
-  const ownerId = (req as any).ownerId;
+  const ownerId = (req as any).user.id;
   const coverImage = req.file;
 
   if (!coverImage) {
@@ -205,11 +202,16 @@ export const createBook = async (req: Request, res: Response) => {
       }
     }
     res.status(500).json({error: 'Error creating book'});
+    }
+  } else {
+    res.status(403).json({ error: "Unauthorized to create a book" });
   }
 };
 
-// TODO update book  TEST
 export const updateBook = async (req: Request, res: Response) => {
+  const ability = buildAbility((req as any).user.role);
+  
+  if (ability.can('update', 'Book')) {
   const {bookId} = req.params;
   const {
     title,
@@ -222,7 +224,7 @@ export const updateBook = async (req: Request, res: Response) => {
     rating,
   } = req.body;
 
-  const ownerId = (req as any).ownerId;
+  const ownerId = (req as any).user.id;
   const coverImage = req.file;
 
   if (!ownerId) {
@@ -303,15 +305,17 @@ export const updateBook = async (req: Request, res: Response) => {
       }
     }
     res.status(500).json({error: 'Error updating book'});
+    }
+  } else {
+    res.status(403).json({ error: "Unauthorized to update a book" });
   }
 };
 
 export const getAllOwnerBooks = async (req: Request, res: Response) => {
-  const ownerId = (req as any).ownerId;
-
-  if (!ownerId) {
-    return res.status(400).json({error: 'Owner ID is required'});
-  }
+  const ability = buildAbility((req as any).user.role);
+  
+  if (ability.can('read', 'OwnerBooks')) {
+  const ownerId = (req as any).user.id;
 
   try {
     const owner = await prisma.owner.findUnique({
@@ -338,12 +342,18 @@ export const getAllOwnerBooks = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching owner books:', error);
     res.status(500).json({error: 'Error fetching owner books'});
+    }
+  } else {
+    res.status(403).json({ error: "Unauthorized to view owner books" });
   }
 };
 
 export const getFilteredOwnerBooks = async (req: Request, res: Response) => {
+  const ability = buildAbility((req as any).user.role);
+  
+  if (ability.can('read', 'OwnerBooks')) {
   const { search, id, title, author, category, status } = req.query;
-  const ownerId = (req as any).userId;
+  const ownerId = (req as any).user.id;
 
   try {
     let query: Prisma.BookWhereInput = { ownerId };
@@ -372,16 +382,18 @@ export const getFilteredOwnerBooks = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error fetching filtered owner books:", error);
     res.status(500).json({ error: "Error fetching filtered owner books" });
+    }
+  } else {
+    res.status(403).json({ error: "Unauthorized to view filtered owner books" });
   }
 };
 
 export const getAllOwnerBooksById = async (req: Request, res: Response) => {
+  const ability = buildAbility((req as any).user.role);
+  
+  if (ability.can('read', 'OwnerBooks')) {
   const {bookId} = req.params;
-  const ownerId = (req as any).ownerId;
-
-  if (!ownerId) {
-    return res.status(400).json({error: 'Owner ID is required'});
-  }
+  const ownerId = (req as any).user.id;
 
   try {
     const owner = await prisma.owner.findUnique({
@@ -405,18 +417,18 @@ export const getAllOwnerBooksById = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching owner book:', error);
     res.status(500).json({error: 'Error fetching owner book'});
+    }
+  } else {
+    res.status(403).json({ error: "Unauthorized to view owner book" });
   }
 };
 
-
-// deleteBook
 export const deleteBook = async (req: Request, res: Response) => {
+  const ability = buildAbility((req as any).user.role);
+  
+  if (ability.can('delete', 'Book')) {
   const {bookId} = req.params;
-  const ownerId = (req as any).ownerId;
-
-  if (!ownerId) {
-    return res.status(400).json({error: 'Owner ID is required'});
-  }
+  const ownerId = (req as any).user.id;
 
   try {
     const owner = await prisma.owner.findUnique({
@@ -444,19 +456,19 @@ export const deleteBook = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error deleting book:', error);
     res.status(500).json({error: 'Error deleting book'});
+    }
+  } else {
+    res.status(403).json({ error: "Unauthorized to delete a book" });
   }
 };
 
 export const getOwnerBalance = async (req: Request, res: Response) => {
-  const {ownerId} = req.params;
-  const tokenOwnerId = (req as any).ownerId;
+  const ability = buildAbility((req as any).user.role);
+  
+  if (ability.can('read', 'OwnerWallet')) {
+  const ownerId = (req as any).user.id;
 
   try {
-    if (ownerId !== tokenOwnerId) {
-      return res.status(403).json({
-        error: 'Unauthorized: You can only get balance of your own wallet',
-      });
-    }
     const ownerWallet = await prisma.ownerWallet.findUnique({where: {ownerId}});
 
     if (!ownerWallet) {
@@ -467,22 +479,20 @@ export const getOwnerBalance = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching owner wallet balance:', error);
     res.status(500).json({error: 'Error fetching owner wallet balance'});
+    }
+  } else {
+    res.status(403).json({ error: "Unauthorized to view owner wallet balance" });
   }
 };
 
 export const ownerWithdraw = async (req: Request, res: Response) => {
-  const {ownerId} = req.params;
-  const tokenOwnerId = (req as any).ownerId;
-
+  const ability = buildAbility((req as any).user.role);
+  
+  if (ability.can('update', 'OwnerWallet')) {
+  const ownerId = (req as any).user.id;
   const {amount} = withdrawSchema.parse(req.body);
 
   try {
-    if (ownerId !== tokenOwnerId) {
-      return res.status(403).json({
-        error: 'Unauthorized: You can only withdraw from your own wallet',
-      });
-    }
-
     const ownerWallet = await prisma.ownerWallet.findUnique({where: {ownerId}});
 
     if (!ownerWallet || ownerWallet.balance < amount) {
@@ -501,6 +511,9 @@ export const ownerWithdraw = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error withdrawing funds:', error);
     res.status(500).json({error: 'Error withdrawing funds'});
+    }
+  } else {
+    res.status(403).json({ error: "Unauthorized to withdraw funds" });
   }
 };
 
@@ -514,12 +527,19 @@ export const ownerLogout = async (req: Request, res: Response) => {
     res.status(500).json({error: 'Error logging out'});
   }
 };
+
 export const getCategories = async (req: Request, res: Response) => {
+  const ability = buildAbility((req as any).user.role);
+  
+  if (ability.can('read', 'Category')) {
   try {
     const categories = await prisma.category.findMany();
     res.json(categories);
   } catch (error) {
     console.error('Error fetching categories:', error);
     res.status(500).json({error: 'Error fetching categories'});
+    }
+  } else {
+    res.status(403).json({ error: "Unauthorized to view categories" });
   }
 };

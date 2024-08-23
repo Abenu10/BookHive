@@ -1,25 +1,26 @@
-import {Request, Response, NextFunction} from 'express';
+import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-// Extend the Request interface
-interface CustomRequest extends Request {
-  userId?: string;
-}
-
-const verifyToken = (req: CustomRequest, res: Response, next: NextFunction) => {
-  const token = req.headers['authorization']?.split(' ')[1];
+const verifyToken = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    return res.status(403).send({message: 'No token provided!'});
+    return res.status(401).json({ message: 'No token provided' });
   }
 
-  jwt.verify(token, process.env.JWT_ACCESS_SECRET as string, (err, decoded) => {
-    if (err) {
-      return res.status(401).send({message: 'Unauthorized!'});
-    }
-    req.userId = (decoded as any).id;
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET as string) as any;
+    (req as any).user = {
+      id: decoded.id,
+      role: decoded.role
+    };
+    console.log('User attached to request:', (req as any).user);
     next();
-  });
+  } catch (error) {
+    console.error('Token verification failed:', error);
+    return res.status(403).json({ message: 'Invalid token' });
+  }
 };
 
 export default verifyToken;

@@ -14,26 +14,31 @@ import {
   getCategories,
   getFilteredOwnerBooks
 } from '../controllers/OwnerController';
-import verifyOwnerToken from '../middlewares/ownerMiddleware';
-import  upload  from '../middlewares/upload';
+import upload from '../middlewares/upload';
+import express from 'express';
+import { checkAbility } from '../middlewares/checkAbility';
+import { Actions, Subjects } from '../config/caslAbility';
 
-const express = require('express');
 const router = express.Router();
 
+// Public routes
 router.post('/register', registerOwner);
 router.post('/login', loginOwner);
-router.post('/create-book', verifyOwnerToken, upload.single('coverImage'), createBook);
-router.patch('/update-book/:bookId', verifyOwnerToken, upload.single('coverImage'), updateBook);
-// TODO get all books
-router.get('/book', verifyOwnerToken, getAllOwnerBooks);
-router.get('/book/:bookId', verifyOwnerToken, getAllOwnerBooksById);
-router.delete('/book/:bookId', verifyOwnerToken, deleteBook);
-router.get('/filtered-books', verifyOwnerToken, getFilteredOwnerBooks);
 
-router.post('/:ownerId/withdraw', verifyOwnerToken, ownerWithdraw);
-router.get('/:ownerId', verifyOwnerToken, getOwnerBalance);
+// Protected routes
+router.use(verifyToken);
+
+router.post('/create-book', checkAbility('create' as Actions, 'Book' as Subjects), upload.single('coverImage'), createBook);
+router.patch('/update-book/:bookId', checkAbility('update' as Actions, 'Book' as Subjects), upload.single('coverImage'), updateBook);
+router.get('/book', checkAbility('read' as Actions, 'OwnerBooks' as Subjects), getAllOwnerBooks);
+router.get('/book/:bookId', checkAbility('read' as Actions, 'OwnerBooks' as Subjects), getAllOwnerBooksById);
+router.delete('/book/:bookId', checkAbility('delete' as Actions, 'Book' as Subjects), deleteBook);
+router.get('/filtered-books', checkAbility('read' as Actions, 'OwnerBooks' as Subjects), getFilteredOwnerBooks);
+
+router.post('/withdraw', checkAbility('update' as Actions, 'OwnerWallet' as Subjects), ownerWithdraw);
+router.get('/balance', checkAbility('read' as Actions, 'OwnerWallet' as Subjects), getOwnerBalance);
 router.post('/logout', ownerLogout);
 
-router.get('/category/all', getCategories);
+router.get('/category/all', checkAbility('read' as Actions, 'Category' as Subjects), getCategories);
 
 export default router;

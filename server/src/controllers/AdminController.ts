@@ -2,6 +2,7 @@ import {Request, Response} from "express";
 import {PrismaClient, Prisma, Role} from "@prisma/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { buildAbility } from '../config/caslAbility';
 
 const prisma = new PrismaClient();
 
@@ -42,7 +43,7 @@ export const registerAdmin = async (req: Request, res: Response) => {
       },
     });
 
-    const payload = {id: user.id, name: user.name, email: user.email};
+    const payload = {id: user.id, name: user.name, email: user.email, role: user.role};
     const accessToken = jwt.sign(
       payload,
       process.env.JWT_ACCESS_SECRET as string,
@@ -91,6 +92,7 @@ export const loginAdmin = async (req: Request, res: Response) => {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role,
     };
 
     const accessToken = jwt.sign(
@@ -125,73 +127,88 @@ export const loginAdmin = async (req: Request, res: Response) => {
 
 // Get all owners
 export const getAllOwners = async (req: Request, res: Response) => {
-  try {
-    const owners = await prisma.owner.findMany();
-
-    res.json(owners);
-  } catch (error) {
-    console.error("Error fetching owners:", error);
-    res.status(500).json({error: "Error fetching owners"});
+  const ability = buildAbility((req as any).user.role);
+  
+  if (ability.can('read', 'Owners')) {
+    try {
+      const owners = await prisma.owner.findMany();
+      res.json(owners);
+    } catch (error) {
+      console.error("Error fetching owners:", error);
+      res.status(500).json({error: "Error fetching owners"});
+    }
+  } else {
+    res.status(403).json({ error: "Unauthorized to view owners" });
   }
 };
 
 export const toggleOwnerStatus = async (req: Request, res: Response) => {
-  const {ownerId} = req.params;
+  const ability = buildAbility((req as any).user.role);
+  
+  if (ability.can('update', 'toggleOwner')) {
+    const {ownerId} = req.params;
+    try {
+      const owner = await prisma.owner.findUnique({
+        where: {id: ownerId},
+      });
 
-  try {
-    const owner = await prisma.owner.findUnique({
-      where: {id: ownerId},
-    });
+      if (!owner) {
+        return res.status(404).json({error: "Owner not found"});
+      }
 
-    if (!owner) {
-      return res.status(404).json({error: "Owner not found"});
+      const newStatus = owner.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+
+      const updatedOwner = await prisma.owner.update({
+        where: {id: ownerId},
+        data: {status: newStatus},
+      });
+
+      res.json({
+        message: `Owner account ${newStatus.toLowerCase()}`,
+        ownerId: updatedOwner.id,
+        status: updatedOwner.status,
+      });
+    } catch (error) {
+      console.error("Error toggling owner status:", error);
+      res.status(500).json({error: "Error updating owner account status"});
     }
-
-    const newStatus = owner.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
-
-    const updatedOwner = await prisma.owner.update({
-      where: {id: ownerId},
-      data: {status: newStatus},
-    });
-
-    res.json({
-      message: `Owner account ${newStatus.toLowerCase()}`,
-      ownerId: updatedOwner.id,
-      status: updatedOwner.status,
-    });
-  } catch (error) {
-    console.error("Error toggling owner status:", error);
-    res.status(500).json({error: "Error updating owner account status"});
+  } else {
+    res.status(403).json({ error: "Unauthorized to toggle owner status" });
   }
 };
 
 export const toggleBookStatus = async (req: Request, res: Response) => {
-  const {bookId} = req.params;
+  const ability = buildAbility((req as any).user.role);
+  
+  if (ability.can('update', 'toggleBook')) {
+    const {bookId} = req.params;
+    try {
+      const book = await prisma.book.findUnique({
+        where: {id: parseInt(bookId)},
+      });
 
-  try {
-    const book = await prisma.book.findUnique({
-      where: {id: parseInt(bookId)},
-    });
+      if (!book) {
+        return res.status(404).json({error: "Book not found"});
+      }
 
-    if (!book) {
-      return res.status(404).json({error: "Book not found"});
+      const newStatus = book.status === "APPROVED" ? "PENDING" : "APPROVED";
+
+      const updatedBook = await prisma.book.update({
+        where: {id: parseInt(bookId)},
+        data: {status: newStatus},
+      });
+
+      res.json({
+        message: `Book status changed to ${newStatus.toLowerCase()}`,
+        bookId: updatedBook.id,
+        status: updatedBook.status,
+      });
+    } catch (error) {
+      console.error("Error toggling book status:", error);
+      res.status(500).json({error: "Error updating book status"});
     }
-
-    const newStatus = book.status === "APPROVED" ? "PENDING" : "APPROVED";
-
-    const updatedBook = await prisma.book.update({
-      where: {id: parseInt(bookId)},
-      data: {status: newStatus},
-    });
-
-    res.json({
-      message: `Book status changed to ${newStatus.toLowerCase()}`,
-      bookId: updatedBook.id,
-      status: updatedBook.status,
-    });
-  } catch (error) {
-    console.error("Error toggling book status:", error);
-    res.status(500).json({error: "Error updating book status"});
+  } else {
+    res.status(403).json({ error: "Unauthorized to toggle book status" });
   }
 };
 
@@ -297,55 +314,66 @@ export const deleteBook = async (req: Request, res: Response) => {
 
 // create category
 export const createCategory = async (req: Request, res: Response) => {
-  const categoryData: Prisma.CategoryCreateInput = req.body;
-
-  try {
-    const existingCategory = await prisma.category.findUnique({
-      where: {name: categoryData.name},
-    });
-
-    if (existingCategory) {
-      return res.status(400).json({
-        message: "A category with this name already exists",
-        categoryId: existingCategory.id,
+  const ability = buildAbility((req as any).user.role);
+  
+  if (ability.can('create', 'Category')) {
+    const categoryData: Prisma.CategoryCreateInput = req.body;
+    try {
+      const existingCategory = await prisma.category.findUnique({
+        where: {name: categoryData.name},
       });
-    }
-    const category = await prisma.category.create({
-      data: categoryData,
-    });
 
-    res.status(201).json({
-      message: "Category created successfully",
-      categoryId: category.id,
-    });
-  } catch (error) {
-    console.error("Error creating category:", error);
-    res.status(500).json({error: "Error creating category"});
+      if (existingCategory) {
+        return res.status(400).json({
+          message: "A category with this name already exists",
+          categoryId: existingCategory.id,
+        });
+      }
+      const category = await prisma.category.create({
+        data: categoryData,
+      });
+
+      res.status(201).json({
+        message: "Category created successfully",
+        categoryId: category.id,
+      });
+    } catch (error) {
+      console.error("Error creating category:", error);
+      res.status(500).json({error: "Error creating category"});
+    }
+  } else {
+    res.status(403).json({ error: "Unauthorized to create category" });
   }
 };
 // delete category
 export const deleteCategory = async (req: Request, res: Response) => {
-  const {id} = req.params;
-  try {
-    // Check if there are any books associated with this category
-    const booksInCategory = await prisma.book.count({
-      where: {categoryId: parseInt(id)},
-    });
-
-    if (booksInCategory > 0) {
-      return res.status(400).json({
-        error:
-          "Cannot delete category. There are books associated with this category.",
+  const ability = buildAbility((req as any).user.role);
+  
+  if (ability.can('delete', 'Category')) {
+    const {id} = req.params;
+    try {
+      // Check if there are any books associated with this category
+      const booksInCategory = await prisma.book.count({
+        where: {categoryId: parseInt(id)},
       });
-    }
 
-    await prisma.category.delete({
-      where: {id: parseInt(id)},
-    });
-    res.json({message: "Category deleted successfully"});
-  } catch (error) {
-    console.error("Error deleting category:", error);
-    res.status(500).json({error: "Error deleting category"});
+      if (booksInCategory > 0) {
+        return res.status(400).json({
+          error:
+            "Cannot delete category. There are books associated with this category.",
+        });
+      }
+
+      await prisma.category.delete({
+        where: {id: parseInt(id)},
+      });
+      res.json({message: "Category deleted successfully"});
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      res.status(500).json({error: "Error deleting category"});
+    }
+  } else {
+    res.status(403).json({ error: "Unauthorized to delete category" });
   }
 };
 
